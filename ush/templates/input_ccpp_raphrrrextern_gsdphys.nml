@@ -190,9 +190,9 @@
        iau_delthrs    = 6
        iaufhrs        = 30
        iau_inc_files  = ''
-       do_sppt        = .F.
-       do_shum        = .F.
-       do_skeb        = .F.
+       do_sppt        = .T.
+       do_shum        = .T.
+       do_skeb        = .T.
        do_sfcperts    = .F.
        lsm            = 3
        lsoil          = 9
@@ -250,6 +250,28 @@
        FSICS    = 99999,
 /
 &nam_stochy
+  lon_s=768, lat_s=384,
+  ntrunc=382,
+  sppt=1.0,
+  sppt_tau = 2.16E4,
+  sppt_lscale=150.E3,
+  USE_ZMTNBLCK=.FALSE.,
+  SPPT_LOGIT=.TRUE.,
+  SPPT_SFCLIMIT=.FALSE.,
+  ISEED_SPPT=1,
+  SHUM=0.006
+  SHUM_TAU=21600
+  SHUM_LSCALE=150.E3,
+  ISEED_SHUM=2,
+  SKEBNORM=1,
+  SKEB=0.5
+  SKEB_VDOF=10
+  SKEB_TAU=21600.
+  SKEB_LSCALE=150.E3
+  ISEED_SKEB=3,
+  skebint=3600,
+  spptint=3600,
+  shumint=3600
 /
 &nam_sfcperts
 /
