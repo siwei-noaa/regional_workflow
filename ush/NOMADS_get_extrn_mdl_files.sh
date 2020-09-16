@@ -9,6 +9,87 @@ fi
 yyyymmdd=$1 #i.e. "20191224"
 hh=$2 #i.e. "12"
 ##
+### tea check time is multiple of 6 and not older than 3 days
+check_request_time() {
+
+   echo $1 $2
+   reqdata=`date "+%s" --date="$1 $2:00:00"`
+   echo reqdata = $reqdata
+
+# check that forecast hour is valid
+   echo forecast_hour=$2
+   let mod=$(($2%3))
+   echo mod=$mod
+   set zero = 0
+
+   if ((mod == zero));then
+     echo 'valid forecast hour'
+   else
+     echo 'forecast hour must be 00,06,12,18'
+     return 1
+   fi
+
+
+# check that date is no more than 3 days old
+   read month day year hour < <(date -u "+%m %d %Y %H")
+   echo $month $day $year $hour5
+# nowtime=$(date -d "$month/$day/$year $hour:00:00" +%s)
+   nowtime=$(date "+%s")
+   echo nowtime = $nowtime
+   cutoff=$(date -d "3 days ago" +%s)
+   echo cutoff = $cutoff
+
+# diff=`expr $reqdata - $cutoff`
+   let difference="reqdata - cutoff"
+   echo diff=$difference
+
+   set zero = 0
+
+# if [ $difference <= 0 ]
+   if ((difference < zero));
+   then
+     echo "requested data older than 3 days"
+     return 1
+   fi
+
+   echo "requested data less than 3 days old"
+   return 0
+}
+
+check_forecast_length() {
+
+   echo forecast_length=$1
+   let mod=$(($1%3))
+   echo mod=$mod
+   set zero = 0
+
+   if ((mod == zero));then
+     echo 'valid forecast length'
+   else
+     echo 'forecast length must multiple of 3'
+     return 1
+   fi
+
+   return 0
+}
+
+check_forecast_int() {
+
+   echo forecast_int=$1
+   let mod=$(($1%3))
+   echo mod=$mod
+   set zero = 0
+
+   if ((mod == zero));then
+     echo 'valid forecast interval'
+   else
+     echo 'forecast interval must be multiple of 3'
+     return 1
+   fi
+
+   return 0
+}
+
 ## file format (grib2 or nemsio), the default format is grib2
 if [ "$#" -ge 3 ]; then
    file_fmt=$3
@@ -21,12 +102,19 @@ if [ "$#" -ge 4 ]; then
 else 
    nfcst=6
 fi
+
 ## forecast interval, the default interval are 3 hours
 if [ "$#" -ge 5 ]; then
    nfcst_int=$5
 else 
    nfcst_int=3
 fi
+
+check_request_time $1 $2 
+check_forecast_length $nfcst
+check_forecast_int $nfcst_int
+
+exit
 
 # Get the data (do not need to edit anything after this point!)
 yyyymm=$((yyyymmdd/100))
