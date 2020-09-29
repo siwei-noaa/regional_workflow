@@ -8,112 +8,64 @@ fi
 ## date (year month day) and time (hour)
 yyyymmdd=$1 #i.e. "20191224"
 hh=$2 #i.e. "12"
-echo reqdata= `date -d "$1 $2" "+%m %d %Y %H"`
-export reqdata=`date -d "$1 $2" "+%s"`
-echo reqdata = $reqdata
 ##
 ### tea check that model is one of four
-echo model $3 format $4
-export data_format=$4
-case $3 in
-  "fv3gfs"|"FV3GFS"|"GFSFV3"|"gfsfv3")
-    echo 'using FV3GFS forecast' $3
-    export fcst_model="fv3gfs"
-    echo data_format ${data_format}
-    if [[ ${data_format} != "grib2" && ${data_format} != "GRIB2" ]] ; then
-      echo "invalid data format ${data_format}; must use grib2 with fv3gfs"
-      exit;
-    fi;;
-  "HRRR"|"hrrr")
-    echo  'using HRRR forecast' $3
-    export fcst_model="hrrr";;
-  "RAP"|"rap")
-    echo 'using RAP forecast' $3
-    export fcst_model="rap";;
-  "NAM"|"nam")
-    echo 'using NAM forecast' $3
-    export fcst_model="nam";;
+echo $3
+case TRUE in
+  $3 == {"fv3gfs"|"FV3GFS"})
+    echo 'using FV3GFS forecast';;
+  {HRRR|hrrr})
+    echo  'using HRRR forecast';;
+  {RAP|rap})
+    echo 'using RAP forecast';;
+  {NAM|nam})
+    echo 'using NAM forecast';;
   *)
     echo 'unrecognized model'
     echo 'use GFSFV3/HRRR/RAP/NAM'
     exit ;;
 esac
-echo fcst_model= ${fcst_model}, data_format=${data_format}
 
-## file format (grib2 or nemsio), the default format is grib2
-if [ "$#" -ge 4 ]; then
-   file_fmt=$4
-else 
-   file_fmt="grib2"
-fi
-echo file_fmt = $file_fmt
-## forecast length, the default value are 6 hours
-if [ "$#" -ge 5 ]; then
-   nfcst=$5
-else 
-   nfcst=6
-fi
-
-echo 'forecast until ',$nfcst
-
-## forecast interval, the default interval are 3 hours
-if [ "$#" -ge 6 ]; then
-   nfcst_int=$6
-else 
-   nfcst_int=3
-fi
-echo 'forecast every ',$nfcst_int
-
-echo '1-7' $1 $2 $3 $4 $5 $6
 ### tea check time is multiple of 6 and not older than 3 days
 check_request_time() {
 
-   echo 'in check_request_time'
+   echo $1 $2
+   reqdata=`date "+%s" --date="$1 $2:00:00"`
    echo reqdata = $reqdata
 
 # check that forecast hour is valid
-   export forecast_hour=$2
-   echo forecast_hour=$forecast_hour
-   export modtime=$(($forecast_hour % 6))
-   echo modtime=$modtime
-   export zero=0
-   echo zero=$zero
-   if [[ $modtime == $zero ]];then
+   echo forecast_hour=$2
+   let mod=$(($2%3))
+   echo mod=$mod
+   set zero = 0
+
+   if ((mod == zero));then
      echo 'valid forecast hour'
    else
      echo 'forecast hour must be 00,06,12,18'
-     exit 1
+     return 1
    fi
 
-# check that date is not in the future
-#  echo date=`date -u "+%m %d %Y %H"`
+# check that date is no more than 3 days old
    read month day year hour < <(date -u "+%m %d %Y %H")
-   echo "now" $month $day $year $hour
+   echo $month $day $year $hour
+# nowtime=$(date -d "$month/$day/$year $hour:00:00" +%s)
    nowtime=$(date "+%s")
    echo nowtime = $nowtime
-   echo reqdata = $reqdata
-   if [[ $reqdata -gt $nowtime ]]; then
-     echo "forecast cannot start in the future"
-     exit 1
-   fi
-
-#check that data is not more than 3 days old
-   echo cutoff `date -d "3 days ago" "+%m %d %Y %z"`
    cutoff=$(date -d "3 days ago" +%s)
    echo cutoff = $cutoff
 
 # diff=`expr $reqdata - $cutoff`
-   let difference="$reqdata - $cutoff"
-   echo reqdata $reqdata $cutoff difference $difference
+   let difference="reqdata - cutoff"
    echo diff=$difference
 
    set zero = 0
 
 # if [ $difference <= 0 ]
-   if [[ $difference -lt $zero ]];
+   if ((difference < zero));
    then
      echo "requested data older than 3 days"
-     exit 1
+     return 1
    fi
 
    echo "requested data less than 3 days old"
@@ -123,15 +75,15 @@ check_request_time() {
 check_forecast_length() {
 
    echo forecast_length=$1
-   export modtime=$(( $1 % 3 ))
-   echo mod=$modtime
+   let mod=$(($1%3))
+   echo mod=$mod
    set zero = 0
 
-   if [[ $modtime -eq $zero ]];then
+   if ((mod == zero));then
      echo 'valid forecast length'
    else
      echo 'forecast length must multiple of 3'
-     exit 1
+     return 1
    fi
 
    return 0
@@ -140,22 +92,41 @@ check_forecast_length() {
 check_forecast_int() {
 
    echo forecast_int=$1
-   export modtime=$(( $1 % 3))
-   echo mod=$modtime
+   let mod=$(($1%3))
+   echo mod=$mod
    set zero = 0
 
-   if [[ $modtime -eq $zero ]];then
+   if ((mod == zero));then
      echo 'valid forecast interval'
    else
      echo 'forecast interval must be multiple of 3'
-     exit 1
+     return 1
    fi
 
    return 0
 }
 
-echo "check_request_time $yyyymmdd $hh"
-check_request_time $yyyymmdd $hh
+## file format (grib2 or nemsio), the default format is grib2
+if [ "$#" -ge 4 ]; then
+   file_fmt=$4
+else 
+   file_fmt="grib2"
+fi
+## forecast length, the default value are 6 hours
+if [ "$#" -ge 5 ]; then
+   nfcst=$5
+else 
+   nfcst=6
+fi
+
+## forecast interval, the default interval are 3 hours
+if [ "$#" -ge 6 ]; then
+   nfcst_int=$6
+else 
+   nfcst_int=3
+fi
+
+check_request_time $1 $2 
 check_forecast_length $nfcst
 check_forecast_int $nfcst_int
 
