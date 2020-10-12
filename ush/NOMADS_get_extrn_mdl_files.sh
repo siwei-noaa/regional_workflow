@@ -183,8 +183,8 @@ check_forecast_int() {
 
 echo "check_request_time $yyyymmdd $hh"
 check_request_time $yyyymmdd $hh
-check_forecast_length $nfcst
-check_forecast_int $nfcst_int
+#check_forecast_length $nfcst
+#check_forecast_int $nfcst_int
 
 # Get the data (do not need to edit anything after this point!)
 yyyymm=$((yyyymmdd/100))
